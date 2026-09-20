@@ -7,6 +7,7 @@ import SectionLabel from "../components/SectionLabel";
 import Button from "../components/Button";
 import RoomCard from "../components/RoomCard";
 import CreateRoomModal from "../components/CreateRoomModal";
+import JoinRoomCard from "../components/JoinRoomCard";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -51,9 +52,11 @@ const Dashboard = () => {
         <h1 className="font-mono text-4xl font-bold text-cream mb-3">
           Hello, <span className="text-amber">{user?.name}</span>
         </h1>
-        <p className="font-mono text-muted text-sm mb-12">
+        <p className="font-mono text-muted text-sm mb-8">
           $ your workspace is ready
         </p>
+
+        <JoinRoomCard />
 
         <div className="flex items-center justify-between mb-6">
           <SectionLabel number="02" text={`your_rooms (${rooms.length})`} />
