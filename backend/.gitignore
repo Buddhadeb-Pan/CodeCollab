@@ -4,3 +4,4 @@ node_modules
 logs
 *.log
 test-auth.js
+test-rooms.js

@@ -5,6 +5,7 @@ require("express-async-errors");
 
 const { connectDB } = require("./src/config/db");
 const authRoutes = require("./src/routes/authRoutes");
+const roomRoutes = require("./src/routes/roomRoutes");
 const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
 
 const app = express();
@@ -17,6 +18,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/rooms", roomRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
