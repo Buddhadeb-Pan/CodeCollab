@@ -8,6 +8,8 @@ import Navbar from "../components/Navbar";
 import CodeEditor from "../components/CodeEditor";
 import UserList from "../components/UserList";
 import ChatPanel from "../components/ChatPanel";
+import OutputPanel from "../components/OutputPanel";
+import RunButton from "../components/RunButton";
 
 const starterCode = {
   javascript: '// Welcome to CodeCollab\n// Start typing to collaborate\n\nfunction greet(name) {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("World"));',
@@ -33,6 +35,9 @@ const Room = () => {
   const [messages, setMessages] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
   const [remoteCursors, setRemoteCursors] = useState({}); // { userId: { name, position } }
+  const [output, setOutput] = useState(null);
+  const [outputBy, setOutputBy] = useState(null);
+  const [running, setRunning] = useState(false);
 
   // Track what server last sent us — to prevent echo
   const lastRemoteCode = useRef(null);
@@ -127,6 +132,12 @@ const Room = () => {
       }));
     };
 
+    const onOutputUpdate = ({ output: remoteOutput, by, at }) => {
+      console.log("📥 Output received from", by);
+      setOutput(remoteOutput);
+      setOutputBy(by);
+    };
+
     socket.on("code-snapshot", onSnapshot);
     socket.on("code-update", onUpdate);
     socket.on("room-users", onUsers);
@@ -135,6 +146,7 @@ const Room = () => {
     socket.on("user-typing", onUserTyping);
     socket.on("user-stop-typing", onUserStopTyping);
     socket.on("cursor-update", onCursorUpdate);
+    socket.on("output-update", onOutputUpdate);
 
     return () => {
       socket.off("code-snapshot", onSnapshot);
@@ -145,6 +157,7 @@ const Room = () => {
       socket.off("user-typing", onUserTyping);
       socket.off("user-stop-typing", onUserStopTyping);
       socket.off("cursor-update", onCursorUpdate);
+      socket.off("output-update", onOutputUpdate);
     };
   }, [socket]);
 
@@ -218,6 +231,70 @@ const Room = () => {
       roomCode: room.code,
       position,
     });
+  };
+
+  const handleRun = async () => {
+    if (running) return;
+    if (!code.trim()) {
+      toast.error("Nothing to run — write some code first");
+      return;
+    }
+    setRunning(true);
+    setOutput(null);
+    setOutputBy(null);
+
+    // Notify others that we are running
+    if (socket && room) {
+      socket.emit("output-update", {
+        roomCode: room.code,
+        output: {
+          stdout: "",
+          stderr: "",
+          running: true,
+          by: user?.name,
+        },
+      });
+    }
+
+    try {
+      const res = await api.post("/api/execute", { code, language });
+      const result = res.data.data;
+      setOutput(result);
+      setOutputBy(user?.name);
+
+      if (socket && room) {
+        socket.emit("output-update", {
+          roomCode: room.code,
+          output: result,
+        });
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || "Execution failed";
+      toast.error(msg);
+      const errOutput = {
+        stdout: "",
+        stderr: msg,
+        exitCode: -1,
+        duration: 0,
+        hasError: true,
+      };
+      setOutput(errOutput);
+      setOutputBy(user?.name);
+
+      if (socket && room) {
+        socket.emit("output-update", {
+          roomCode: room.code,
+          output: errOutput,
+        });
+      }
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const handleClearOutput = () => {
+    setOutput(null);
+    setOutputBy(null);
   };
 
   const copyCode = () => {
@@ -317,8 +394,11 @@ const Room = () => {
                 <span className="text-green-400">● collaborative · read/write</span>
                 {modified && <span className="text-amber">● modified</span>}
               </div>
-              <div className="font-mono text-xs text-muted">
-                {code.split("\n").length} lines · {code.length} chars
+              <div className="flex items-center gap-3">
+                <div className="font-mono text-xs text-muted">
+                  {code.split("\n").length} lines · {code.length} chars
+                </div>
+                <RunButton running={running} onRun={handleRun} />
               </div>
             </div>
 
@@ -328,6 +408,13 @@ const Room = () => {
               onChange={handleCodeChange}
               onCursorChange={handleCursorChange}
               remoteCursors={remoteCursors}
+            />
+
+            <OutputPanel
+              output={output}
+              running={running}
+              outputBy={outputBy}
+              onClear={handleClearOutput}
             />
           </div>
 

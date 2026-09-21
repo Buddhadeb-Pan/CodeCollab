@@ -139,6 +139,16 @@ const initSocket = (httpServer) => {
       });
     });
 
+    // Output broadcast
+    socket.on("output-update", ({ roomCode, output }) => {
+      if (!roomCode || output === undefined) return;
+      socket.to(roomCode).emit("output-update", {
+        output,
+        by: socket.data.user?.name || "Someone",
+        at: new Date().toISOString(),
+      });
+    });
+
     const handleLeave = () => {
       const roomCode = socket.data.roomCode;
       if (!roomCode) return;
