@@ -7,6 +7,7 @@ import { useSocket } from "../hooks/useSocket";
 import Navbar from "../components/Navbar";
 import CodeEditor from "../components/CodeEditor";
 import UserList from "../components/UserList";
+import ChatPanel from "../components/ChatPanel";
 
 const starterCode = {
   javascript: '// Welcome to CodeCollab\n// Start typing to collaborate\n\nfunction greet(name) {\n  return `Hello, ${name}!`;\n}\n\nconsole.log(greet("World"));',
@@ -29,10 +30,14 @@ const Room = () => {
   const [modified, setModified] = useState(false);
   const [users, setUsers] = useState([]);
   const [syncReady, setSyncReady] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [typingUsers, setTypingUsers] = useState([]);
+  const [remoteCursors, setRemoteCursors] = useState({}); // { userId: { name, position } }
 
   // Track what server last sent us — to prevent echo
   const lastRemoteCode = useRef(null);
   const joinedRef = useRef(false);
+  const cursorThrottleRef = useRef(null);
 
   // 1. Fetch room metadata
   useEffect(() => {
@@ -81,16 +86,65 @@ const Room = () => {
       setModified(true);
     };
 
-    const onUsers = (list) => setUsers(list);
+    const onUsers = (list) => {
+      setUsers(list);
+      // Clean up cursors for users who left
+      const activeUserIds = new Set(list.map((u) => u.userId));
+      setRemoteCursors((prev) => {
+        const next = {};
+        Object.entries(prev).forEach(([uid, val]) => {
+          if (activeUserIds.has(uid)) {
+            next[uid] = val;
+          }
+        });
+        return next;
+      });
+    };
+
+    const onChatHistory = (history) => {
+      setMessages(history || []);
+    };
+
+    const onChatMessage = (message) => {
+      setMessages((prev) => [...prev, message]);
+    };
+
+    const onUserTyping = ({ userId, name }) => {
+      setTypingUsers((prev) => {
+        if (prev.some((u) => u.userId === userId)) return prev;
+        return [...prev, { userId, name }];
+      });
+    };
+
+    const onUserStopTyping = ({ userId }) => {
+      setTypingUsers((prev) => prev.filter((u) => u.userId !== userId));
+    };
+
+    const onCursorUpdate = ({ userId, name, position }) => {
+      setRemoteCursors((prev) => ({
+        ...prev,
+        [userId]: { name, position },
+      }));
+    };
 
     socket.on("code-snapshot", onSnapshot);
     socket.on("code-update", onUpdate);
     socket.on("room-users", onUsers);
+    socket.on("chat-history", onChatHistory);
+    socket.on("chat-message", onChatMessage);
+    socket.on("user-typing", onUserTyping);
+    socket.on("user-stop-typing", onUserStopTyping);
+    socket.on("cursor-update", onCursorUpdate);
 
     return () => {
       socket.off("code-snapshot", onSnapshot);
       socket.off("code-update", onUpdate);
       socket.off("room-users", onUsers);
+      socket.off("chat-history", onChatHistory);
+      socket.off("chat-message", onChatMessage);
+      socket.off("user-typing", onUserTyping);
+      socket.off("user-stop-typing", onUserStopTyping);
+      socket.off("cursor-update", onCursorUpdate);
     };
   }, [socket]);
 
@@ -113,6 +167,7 @@ const Room = () => {
       socket.emit("leave-room");
       joinedRef.current = false;
       setSyncReady(false);
+      setRemoteCursors({});
     };
   }, [socket, room, user]);
 
@@ -148,6 +203,20 @@ const Room = () => {
       roomCode: room.code,
       code: newCode,
       language,
+    });
+  };
+
+  // 6. User moved cursor
+  const handleCursorChange = (position) => {
+    if (!socket || !room) return;
+    if (cursorThrottleRef.current) return; // throttle
+    cursorThrottleRef.current = setTimeout(() => {
+      cursorThrottleRef.current = null;
+    }, 80);
+
+    socket.emit("cursor-move", {
+      roomCode: room.code,
+      position,
     });
   };
 
@@ -240,8 +309,8 @@ const Room = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          <div className="lg:col-span-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2">
             <div className="flex items-center justify-between border border-line border-b-0 bg-bg-surface px-4 py-2">
               <div className="flex items-center gap-4 font-mono text-xs">
                 <span className="text-amber">{language}</span>
@@ -253,11 +322,25 @@ const Room = () => {
               </div>
             </div>
 
-            <CodeEditor code={code} language={language} onChange={handleCodeChange} />
+            <CodeEditor
+              code={code}
+              language={language}
+              onChange={handleCodeChange}
+              onCursorChange={handleCursorChange}
+              remoteCursors={remoteCursors}
+            />
           </div>
 
           <div className="lg:col-span-1 space-y-4">
             <UserList users={users} currentUserId={user?.id} />
+
+            <ChatPanel
+              socket={socket}
+              roomCode={room.code}
+              messages={messages}
+              setMessages={setMessages}
+              typingUsers={typingUsers}
+            />
 
             <div className="border border-line bg-bg-surface p-4">
               <div className="font-mono text-xs text-muted mb-2">// room_details</div>
