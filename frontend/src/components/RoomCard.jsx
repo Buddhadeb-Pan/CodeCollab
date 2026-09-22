@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { formatRelativeTime } from "../utils/formatDate";
 
 const RoomCard = ({ room, onDelete }) => {
   const [copied, setCopied] = useState(false);
@@ -27,14 +28,14 @@ const RoomCard = ({ room, onDelete }) => {
   };
 
   return (
-    <div className="border border-line p-5 hover:border-amber/50 transition-all duration-200 group">
+    <div className="border border-line p-5 hover:border-amber bg-bg-surface/20 hover:bg-bg-surface transition-all duration-200 group">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1 min-w-0">
           <h3 className="font-mono text-lg font-bold text-cream truncate">
             {room.name}
           </h3>
           <div className="font-mono text-xs text-muted mt-1">
-            {room.language} · {new Date(room.created_at).toLocaleDateString()}
+            {room.language} · {formatRelativeTime(room.created_at)}
           </div>
         </div>
         <button

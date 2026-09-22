@@ -38,7 +38,7 @@ const CreateRoomModal = ({ isOpen, onClose, onRoomCreated }) => {
       onClick={onClose}
     >
       <div
-        className="bg-bg-primary border border-line w-full max-w-md p-6"
+        className="bg-bg-primary border border-line w-full max-w-md p-5 md:p-6 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="font-mono text-xs text-muted tracking-wider mb-3">

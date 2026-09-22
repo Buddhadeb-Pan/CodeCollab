@@ -18,7 +18,6 @@ const CodeEditor = ({ code, language, onChange, onCursorChange, remoteCursors })
     editorRef.current = editor;
     monacoRef.current = monaco;
 
-    // Track cursor position changes
     editor.onDidChangeCursorPosition((e) => {
       if (!mountedRef.current) return;
       if (!onCursorChange) return;
@@ -38,7 +37,6 @@ const CodeEditor = ({ code, language, onChange, onCursorChange, remoteCursors })
     if (onChange) onChange(value || "");
   };
 
-  // Render remote cursors using Monaco decorations
   useEffect(() => {
     const editor = editorRef.current;
     const monaco = monacoRef.current;
@@ -62,7 +60,6 @@ const CodeEditor = ({ code, language, onChange, onCursorChange, remoteCursors })
         },
       });
 
-      // Add a label decoration with the user's name
       newDecorations.push({
         range: new monaco.Range(lineNumber, column, lineNumber, column),
         options: {
@@ -97,9 +94,16 @@ const CodeEditor = ({ code, language, onChange, onCursorChange, remoteCursors })
           border-radius: 2px;
           margin-left: 2px;
         }
+        .monaco-editor .cursor {
+          animation: cursor-blink 1s step-end infinite;
+        }
+        @keyframes cursor-blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
       `}</style>
       <Editor
-        height="500px"
+        height="400px"
         language={languageMap[language] || "javascript"}
         value={code}
         onChange={handleEditorChange}
@@ -119,7 +123,7 @@ const CodeEditor = ({ code, language, onChange, onCursorChange, remoteCursors })
           smoothScrolling: true,
         }}
         loading={
-          <div className="flex items-center justify-center h-[500px] font-mono text-sm text-muted">
+          <div className="flex items-center justify-center h-[400px] font-mono text-sm text-muted">
             <span className="text-amber">$</span> loading_editor...
           </div>
         }

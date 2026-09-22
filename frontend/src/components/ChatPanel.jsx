@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 
 const ChatPanel = ({ socket, roomCode, messages, setMessages, typingUsers }) => {
@@ -7,12 +6,18 @@ const ChatPanel = ({ socket, roomCode, messages, setMessages, typingUsers }) => 
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const isTypingRef = useRef(false);
 
-  // Auto-scroll to bottom on new message
+  // Auto-scroll only if user is at bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   const handleSend = (e) => {
@@ -24,7 +29,6 @@ const ChatPanel = ({ socket, roomCode, messages, setMessages, typingUsers }) => 
     setInput("");
     setSending(false);
 
-    // Stop typing indicator
     if (isTypingRef.current) {
       socket.emit("typing-stop", { roomCode });
       isTypingRef.current = false;
@@ -35,13 +39,11 @@ const ChatPanel = ({ socket, roomCode, messages, setMessages, typingUsers }) => 
     setInput(e.target.value);
     if (!socket) return;
 
-    // Start typing
     if (!isTypingRef.current && e.target.value.length > 0) {
       socket.emit("typing-start", { roomCode });
       isTypingRef.current = true;
     }
 
-    // Reset debounce
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
@@ -52,7 +54,6 @@ const ChatPanel = ({ socket, roomCode, messages, setMessages, typingUsers }) => 
       }
     }, 1500);
 
-    // If input empty, stop immediately
     if (e.target.value.length === 0 && isTypingRef.current) {
       socket.emit("typing-stop", { roomCode });
       isTypingRef.current = false;
@@ -65,8 +66,7 @@ const ChatPanel = ({ socket, roomCode, messages, setMessages, typingUsers }) => 
   };
 
   return (
-    <div className="border border-line bg-bg-surface flex flex-col h-[500px]">
-      {/* Header */}
+    <div className="border border-line bg-bg-surface flex flex-col h-[400px] md:h-[500px]">
       <div className="px-4 py-3 border-b border-line flex items-center justify-between">
         <div className="font-mono text-xs text-muted tracking-wider">
           // chat
@@ -76,13 +76,12 @@ const ChatPanel = ({ socket, roomCode, messages, setMessages, typingUsers }) => 
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {messages.length === 0 ? (
           <div className="text-center font-mono text-xs text-muted py-8">
-            // no messages yet
-            <br />
-            <span className="text-muted/60">say hi to your collaborator</span>
+            <div className="text-amber mb-2">[ ]</div>
+            <div>// no messages yet</div>
+            <div className="text-muted/60 mt-1">say hi to your collaborator</div>
           </div>
         ) : (
           messages.map((m) => {
@@ -116,18 +115,23 @@ const ChatPanel = ({ socket, roomCode, messages, setMessages, typingUsers }) => 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Typing indicator */}
-      <div className="px-4 py-1 h-5">
+      <div className="px-4 py-1 h-5 border-t border-line/30">
         {typingUsers.length > 0 && (
-          <div className="font-mono text-[10px] text-amber animate-pulse">
-            {typingUsers.length === 1
-              ? `${typingUsers[0].name} is typing...`
-              : `${typingUsers.map((u) => u.name).join(", ")} are typing...`}
+          <div className="font-mono text-[10px] text-amber flex items-center gap-2">
+            <span className="flex gap-0.5">
+              <span className="w-1 h-1 bg-amber rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+              <span className="w-1 h-1 bg-amber rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+              <span className="w-1 h-1 bg-amber rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+            </span>
+            <span>
+              {typingUsers.length === 1
+                ? `${typingUsers[0].name} is typing...`
+                : `${typingUsers.map((u) => u.name).join(", ")} are typing...`}
+            </span>
           </div>
         )}
       </div>
 
-      {/* Input */}
       <form onSubmit={handleSend} className="border-t border-line p-3 flex gap-2">
         <input
           type="text"

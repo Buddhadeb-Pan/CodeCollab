@@ -33,12 +33,12 @@ const Home = () => {
       <Navbar />
 
       {/* HERO SECTION */}
-      <section className="max-w-7xl mx-auto px-6 pt-20 pb-24">
+      <section className="max-w-7xl mx-auto px-6 pt-12 md:pt-20 pb-16 md:pb-24">
         <div className="font-mono text-xs text-muted tracking-wider mb-6">
           <span className="text-amber">//</span> 01. tagline
         </div>
 
-        <h1 className="font-mono text-5xl md:text-7xl font-bold text-cream leading-tight tracking-tight mb-6">
+        <h1 className="font-mono text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-cream leading-tight tracking-tight mb-6">
           Code together.
           <br />
           Ship faster.
@@ -128,7 +128,7 @@ const Home = () => {
       </section>
 
       {/* FEATURES SECTION */}
-      <section className="max-w-7xl mx-auto px-6 py-20 border-t border-line">
+      <section className="max-w-7xl mx-auto px-6 py-12 md:py-20 border-t border-line">
         <div className="font-mono text-xs text-muted tracking-wider mb-10">
           <span className="text-amber">//</span> 02. features
         </div>
@@ -137,7 +137,7 @@ const Home = () => {
           {features.map((f, i) => (
             <div
               key={f.num}
-              className={`p-8 border-line transition-all duration-200 hover:bg-bg-surface ${
+              className={`p-5 md:p-8 border-line transition-all duration-200 hover:bg-bg-surface ${
                 i % 2 === 0 ? "md:border-r" : ""
               } ${i < 2 ? "border-b" : ""}`}
             >
@@ -152,7 +152,7 @@ const Home = () => {
       </section>
 
       {/* HOW IT WORKS SECTION */}
-      <section className="max-w-7xl mx-auto px-6 py-20 border-t border-line">
+      <section className="max-w-7xl mx-auto px-6 py-12 md:py-20 border-t border-line">
         <div className="font-mono text-xs text-muted tracking-wider mb-10">
           <span className="text-amber">//</span> 03. how_it_works
         </div>
@@ -177,8 +177,8 @@ const Home = () => {
       </section>
 
       {/* CTA SECTION */}
-      <section className="max-w-7xl mx-auto px-6 py-20 border-t border-line">
-        <div className="border border-amber/30 bg-bg-surface p-12 text-center">
+      <section className="max-w-7xl mx-auto px-6 py-12 md:py-20 border-t border-line">
+        <div className="border border-amber/30 bg-bg-surface p-6 md:p-12 text-center">
           <div className="font-mono text-xs text-amber tracking-wider mb-4">
             // 04. get_started
           </div>

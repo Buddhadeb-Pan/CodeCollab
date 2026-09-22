@@ -39,7 +39,7 @@ const OutputPanel = ({ output, running, outputBy, onClear }) => {
         </div>
       </div>
 
-      <div className="p-4 font-mono text-xs leading-relaxed min-h-[120px] max-h-[300px] overflow-y-auto">
+      <div className="p-4 font-mono text-xs leading-relaxed min-h-[100px] max-h-[200px] md:max-h-[300px] overflow-y-auto">
         {(running || isRemoteRunning) && (
           <div className="text-muted">
             <span className="text-amber">$</span> executing code...

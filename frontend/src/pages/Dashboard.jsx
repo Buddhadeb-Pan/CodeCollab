@@ -8,11 +8,13 @@ import Button from "../components/Button";
 import RoomCard from "../components/RoomCard";
 import CreateRoomModal from "../components/CreateRoomModal";
 import JoinRoomCard from "../components/JoinRoomCard";
+import RoomCardSkeleton from "../components/RoomCardSkeleton";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
   const fetchRooms = async () => {
@@ -26,8 +28,25 @@ const Dashboard = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchRooms();
+    setTimeout(() => setRefreshing(false), 500);
+  };
+
   useEffect(() => {
     fetchRooms();
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setModalOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const handleRoomCreated = (newRoom) => {
@@ -47,29 +66,41 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12">
         <SectionLabel number="01" text="welcome" />
-        <h1 className="font-mono text-4xl font-bold text-cream mb-3">
+        <h1 className="font-mono text-2xl md:text-4xl font-bold text-cream mb-3">
           Hello, <span className="text-amber">{user?.name}</span>
         </h1>
-        <p className="font-mono text-muted text-sm mb-8">
-          $ your workspace is ready
+        <p className="font-mono text-muted text-sm mb-8 flex items-center gap-2">
+          <span>$ your workspace is ready</span>
+          <span className="hidden sm:inline text-xs text-muted/60">
+            · <kbd className="border border-line px-1.5 py-0.5 text-cream bg-bg-surface text-[10px]">Ctrl+K</kbd> to create room
+          </span>
         </p>
 
         <JoinRoomCard />
 
         <div className="flex items-center justify-between mb-6">
           <SectionLabel number="02" text={`your_rooms (${rooms.length})`} />
-          <Button onClick={() => setModalOpen(true)}>
-            create_room_ +
-          </Button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="font-mono text-xs border border-line text-muted px-3 py-2 hover:border-amber hover:text-amber transition-all disabled:opacity-50"
+            >
+              {refreshing ? "● refreshing..." : "[ ↻ ]"}
+            </button>
+            <Button onClick={() => setModalOpen(true)}>
+              create_room_ +
+            </Button>
+          </div>
         </div>
 
         {loading ? (
-          <div className="border border-line border-dashed p-12 text-center">
-            <p className="font-mono text-muted text-sm">
-              <span className="text-amber">$</span> loading_rooms...
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+            <RoomCardSkeleton />
+            <RoomCardSkeleton />
+            <RoomCardSkeleton />
           </div>
         ) : rooms.length === 0 ? (
           <div className="border border-line border-dashed p-12 text-center">

@@ -35,7 +35,7 @@ const Login = () => {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="max-w-md mx-auto px-6 py-16">
+      <div className="max-w-md mx-auto px-4 md:px-6 py-10 md:py-16">
         <div className="font-mono text-xs text-muted tracking-wider mb-3">
           <span className="text-amber">//</span> authentication
         </div>
