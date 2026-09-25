@@ -1,34 +1,45 @@
 const bcrypt = require("bcryptjs");
 const { createUser, findUserByEmail } = require("../models/userModel");
 const generateToken = require("../utils/generateToken");
+const { validateEmail, validatePassword, validateName } = require("../middleware/validateInput");
 
 const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
 
-  if (!name || !email || !password) {
+  // Validate all fields
+  const nameError = validateName(name);
+  if (nameError) {
     res.status(400);
-    throw new Error("Please provide all fields");
+    throw new Error(nameError);
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
+  const emailError = validateEmail(email);
+  if (emailError) {
     res.status(400);
-    throw new Error("Invalid email format");
+    throw new Error(emailError);
   }
 
-  if (password.length < 6) {
+  const passwordError = validatePassword(password);
+  if (passwordError) {
     res.status(400);
-    throw new Error("Password must be at least 6 characters");
+    throw new Error(passwordError);
   }
 
-  const userExists = await findUserByEmail(email);
+  const normalizedEmail = email.toLowerCase().trim();
+  const trimmedName = name.trim();
+
+  const userExists = await findUserByEmail(normalizedEmail);
   if (userExists) {
     res.status(409);
     throw new Error("User already exists with this email");
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await createUser({ name, email, password: hashedPassword });
+  const user = await createUser({
+    name: trimmedName,
+    email: normalizedEmail,
+    password: hashedPassword,
+  });
   const token = generateToken(user.id);
 
   res.status(201).json({
@@ -46,7 +57,8 @@ const loginUser = async (req, res) => {
     throw new Error("Please provide email and password");
   }
 
-  const user = await findUserByEmail(email);
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await findUserByEmail(normalizedEmail);
   if (!user) {
     res.status(401);
     throw new Error("Invalid credentials");

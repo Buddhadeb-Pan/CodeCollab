@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -20,6 +20,7 @@ const starterCode = {
 
 const Room = () => {
   const { code: roomCodeParam } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { socket, isConnected } = useSocket();
 
@@ -27,6 +28,7 @@ const Room = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("javascript");
   const [modified, setModified] = useState(false);
@@ -297,6 +299,12 @@ const Room = () => {
     setOutputBy(null);
   };
 
+  const handleLeaveRoom = () => {
+    if (window.confirm("Leave this room? Your unsaved changes will be lost.")) {
+      navigate("/dashboard");
+    }
+  };
+
   const copyCode = () => {
     navigator.clipboard.writeText(room.code);
     setCopied(true);
@@ -356,7 +364,7 @@ const Room = () => {
                 {room.owner_id === user?.id && <span className="text-amber"> (you)</span>}
               </span>
               <span>
-                <span className={isConnected ? "text-green-400" : "text-red-500"}>●</span>{" "}
+                <span className={isConnected ? "text-green-400" : "text-red-500 animate-pulse"}>●</span>{" "}
                 {isConnected ? "socket_live" : "socket_offline"}
               </span>
               {syncReady && <span className="text-green-400">● read-write access</span>}
@@ -377,12 +385,12 @@ const Room = () => {
             >
               [ share_link ]
             </button>
-            <Link
-              to="/dashboard"
-              className="font-mono text-xs border border-line text-muted px-4 py-2 hover:border-amber hover:text-amber transition-all"
+            <button
+              onClick={handleLeaveRoom}
+              className="font-mono text-xs border border-line text-muted px-3 py-2 hover:border-red-500 hover:text-red-500 transition-all"
             >
               [ ← leave_room ]
-            </Link>
+            </button>
           </div>
         </div>
 

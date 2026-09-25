@@ -1,13 +1,22 @@
 const { createRoom, findRoomByCode, findRoomById, getUserRooms, deleteRoom } = require("../models/roomModel");
 const generateRoomCode = require("../utils/generateRoomCode");
+const { validateRoomName } = require("../middleware/validateInput");
+
+const sanitizeLanguage = (lang) => {
+  const allowed = ["javascript", "python", "cpp", "java"];
+  if (!lang || !allowed.includes(lang)) return "javascript";
+  return lang;
+};
 
 const createNewRoom = async (req, res) => {
-  const { name, language = "javascript" } = req.body;
+  const { name, language } = req.body;
   const ownerId = req.user.id;
+  const sanitizedLanguage = sanitizeLanguage(language);
 
-  if (!name || name.trim().length < 2) {
+  const nameError = validateRoomName(name);
+  if (nameError) {
     res.status(400);
-    throw new Error("Room name must be at least 2 characters");
+    throw new Error(nameError);
   }
 
   let code;
@@ -24,7 +33,12 @@ const createNewRoom = async (req, res) => {
     throw new Error("Could not generate unique room code. Try again.");
   }
 
-  const room = await createRoom({ code, name, language, ownerId });
+  const room = await createRoom({
+    code,
+    name: name.trim(),
+    language: sanitizedLanguage,
+    ownerId,
+  });
 
   res.status(201).json({
     success: true,

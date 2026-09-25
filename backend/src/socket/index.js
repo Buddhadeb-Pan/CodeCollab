@@ -1,5 +1,13 @@
 const { Server } = require("socket.io");
 
+const sanitizeMessage = (text) => {
+  if (!text || typeof text !== "string") return "";
+  // Remove HTML tags
+  const cleaned = text.replace(/<[^>]*>/g, "").trim();
+  // Limit to 500 chars
+  return cleaned.slice(0, 500);
+};
+
 const rooms = new Map();
 // rooms.get(code) = {
 //   users: Map<socketId, { id, userId, name, joinedAt }>,
@@ -92,11 +100,14 @@ const initSocket = (httpServer) => {
       const user = socket.data.user;
       if (!user) return;
 
+      const cleanText = sanitizeMessage(text);
+      if (!cleanText) return;
+
       const message = {
         id: `${socket.id}-${Date.now()}`,
         userId: user.id,
         name: user.name,
-        text: text.trim().slice(0, 500),
+        text: cleanText,
         timestamp: new Date().toISOString(),
       };
 

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 
+const stripHtml = (text) => text.replace(/<[^>]*>/g, "");
+
 const ChatPanel = ({ socket, roomCode, messages, setMessages, typingUsers }) => {
   const { user } = useAuth();
   const [input, setInput] = useState("");
@@ -36,7 +38,7 @@ const ChatPanel = ({ socket, roomCode, messages, setMessages, typingUsers }) => 
   };
 
   const handleInputChange = (e) => {
-    setInput(e.target.value);
+    setInput(stripHtml(e.target.value));
     if (!socket) return;
 
     if (!isTypingRef.current && e.target.value.length > 0) {

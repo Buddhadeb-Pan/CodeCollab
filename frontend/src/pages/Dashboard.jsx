@@ -72,7 +72,7 @@ const Dashboard = () => {
           Hello, <span className="text-amber">{user?.name}</span>
         </h1>
         <p className="font-mono text-muted text-sm mb-8 flex items-center gap-2">
-          <span>$ your workspace is ready</span>
+          <span>$ your workspace is ready · {rooms.length} room{rooms.length !== 1 ? "s" : ""}</span>
           <span className="hidden sm:inline text-xs text-muted/60">
             · <kbd className="border border-line px-1.5 py-0.5 text-cream bg-bg-surface text-[10px]">Ctrl+K</kbd> to create room
           </span>

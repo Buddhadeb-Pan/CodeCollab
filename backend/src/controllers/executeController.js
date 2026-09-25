@@ -19,6 +19,17 @@ const LANGUAGE_MAP = {
   },
 };
 
+// Simple blocklist for obvious abuse patterns
+const BLOCKED_PATTERNS = [
+  /while\s*\(\s*true\s*\)/i,        // Infinite loops (while(true))
+  /for\s*\(\s*;\s*;\s*\)/i,          // Infinite for loops
+  /:\s*\(\s*\)\s*\{\s*:\s*\|/i,      // Fork bombs (bash)
+];
+
+const containsBlockedPattern = (code) => {
+  return BLOCKED_PATTERNS.some((pattern) => pattern.test(code));
+};
+
 const executeCode = async (req, res) => {
   const { code, language, stdin = "" } = req.body;
 
@@ -35,6 +46,11 @@ const executeCode = async (req, res) => {
   if (code.length > 50000) {
     res.status(400);
     throw new Error("Code too long (max 50,000 characters)");
+  }
+
+  if (containsBlockedPattern(code)) {
+    res.status(400);
+    throw new Error("Code contains potentially unsafe patterns (infinite loops)");
   }
 
   const config = LANGUAGE_MAP[language];
