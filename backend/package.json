@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "test:auth": "node test-auth.js",
     "test:rooms": "node test-rooms.js",
-    "test:execute": "node test-execute.js"
+    "test:execute": "node test-execute.js",
+    "test:all": "node test-all.js"
   },
   "keywords": [],
   "author": "",
